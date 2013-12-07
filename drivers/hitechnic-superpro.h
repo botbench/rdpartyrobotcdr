@@ -20,7 +20,7 @@
  *
  * License: You may use this code as you wish, provided you give credit where its due.
  *
- * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER. 
+ * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER.
 
  * \author Gustav Jansson (gus_at_hitechnic.com)
  * \date 10 October 2011
@@ -82,7 +82,8 @@ bool HTSPBwriteIO(tSensors link, ubyte mask);
 bool HTSPBsetupIO(tSensors link, ubyte mask);
 int HTSPBreadADC(tSensors link, byte channel, byte width);
 bool HTSPBreadAllADC(tSensors link, int &adch0, int &adch1, int &adch2, int &adch3, int &adch4, byte width);
-bool HTSPBsetSamplingTime(tSensors link, byte interval);
+bool HTSPBsetLED(tSensors link, byte red, byte blue);
+bool HTSPBsetLED(tSensors link, byte mask);
 
 /**
  * Read the values of the digital inputs as specified by the mask.
@@ -239,6 +240,35 @@ bool HTSPBwriteAnalog(tSensors link, byte dac, byte mode, int freq, int volt) {
   return writeI2C(link, HTSPB_I2CRequest);
 }
 
+
+/**
+ * Control the LED
+ * @param link the HTSPB port number
+ * @param red the red LED (0 is off, 1 is on)
+ * @param blue the blue LED (0 is off, 1 is on)
+ * @return true if no error occured, false if it did
+ */
+bool HTSPBsetLED(tSensors link, byte red, byte blue) {
+	return HTSPBsetLED(link, (red & 0x01) + ((blue & 0x01) << 1));
+}
+
+
+/**
+ * Control the LED
+ * @param link the HTSPB port number
+ * @param mask the LED control mask, bit 0 is red, bit 1 is blue.
+ * @return true if no error occured, false if it did
+ */
+bool HTSPBsetLED(tSensors link, byte mask) {
+  memset(HTSPB_I2CRequest, 0, sizeof(tByteArray));
+
+  HTSPB_I2CRequest[0] = 3;                          // Message size
+  HTSPB_I2CRequest[1] = HTSPB_I2C_ADDR;             // I2C Address
+  HTSPB_I2CRequest[2] = HTSPB_OFFSET + HTSPB_LED;   // Start LED control register
+  HTSPB_I2CRequest[3] = mask;                       // The LED control mask
+
+  return writeI2C(link, HTSPB_I2CRequest);
+}
 
 
 #endif // __HTSPB_H__
