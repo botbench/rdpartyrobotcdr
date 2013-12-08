@@ -17,7 +17,7 @@
  *
  * License: You may use this code as you wish, provided you give credit where it's due.
  *
- * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER. 
+ * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER.
 
  * Xander Soldaat (xander_at_botbench.com)
  * 25 August 2012
@@ -29,6 +29,7 @@
 task main(){
 
   int x_val, y_val, z_val;      // axis values
+  float x_fval, y_fval, z_fval;      // axis values
 
   nxtDisplayCenteredTextLine(0, "Mindsensors");
   nxtDisplayCenteredBigTextLine(1, "IMU");
@@ -38,14 +39,23 @@ task main(){
   wait1Msec(2000);
   eraseDisplay();
 
+  /*
+ 	 * Range 1: Change Accelerometer Sensitivity to 2G and Gyro to 250 degrees/sec
+ 	 * Range 2: Change Accelerometer Sensitivity to 4G and Gyro to 500 degrees/sec
+ 	 * Range 3: Change Accelerometer Sensitivity to 8G and Gyro to 2000 degrees/sec
+   * Range 4: Change Accelerometer Sensitivity to 16G and Gyro to 2000 degrees/sec
+ 	 */
+
+  MSIMUsetRange(MSIMU, MSIMU_SENSITIVITY_RANGE_1);
+
   while (true){
 
 		// Read the GYROSCOPE
-    MSIMUreadGyroAxes(MSIMU, x_val, y_val, z_val);
+    MSIMUreadGyroAxes(MSIMU, x_fval, y_fval, z_fval);
 
-		nxtDisplayTextLine(1, "%d", x_val);
-		nxtDisplayTextLine(2, "%d", y_val);
-		nxtDisplayTextLine(3, "%d", z_val);
+		nxtDisplayTextLine(1, "%.2f", x_fval);
+		nxtDisplayTextLine(2, "%.2f", y_fval);
+		nxtDisplayTextLine(3, "%.2f", z_fval);
 
 		// Read the accelerometer
 		MSIMUreadAccelAxes(MSIMU, x_val, y_val, z_val);

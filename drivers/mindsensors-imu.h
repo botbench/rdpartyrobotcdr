@@ -24,7 +24,7 @@
  *
  * License: You may use this code as you wish, provided you give credit where its due.
  *
- * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER. 
+ * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER.
 
  * \author Xander Soldaat (xander_at_botbench.com)
  * \date 23 August 2012
@@ -51,13 +51,18 @@
 #define MSIMU_REG_GYRO_ALL_AXES       0x53  /*!< All Axes for Gyro */
 #define MSIMU_REG_GYRO_FILTER         0x5A  /*!< Filter level for Gyro */
 
-#define MSIMU_CMD_COMPASS_START_CAL   0x43  /*!< Accelerometer 2G range */
-#define MSIMU_CMD_COMPASS_STOP_CAL    0x63  /*!< Accelerometer 2G range */
+#define MSIMU_CMD_COMPASS_START_CAL   0x43  /*!< Compass start calibration */
+#define MSIMU_CMD_COMPASS_STOP_CAL    0x63  /*!< Compass stop calibration */
 
-#define MSIMU_CMD_ACC_RANGE_2G        0x31  /*!< Accelerometer 2G range */
-#define MSIMU_CMD_ACC_RANGE_4G        0x32  /*!< Accelerometer 4G range */
-#define MSIMU_CMD_ACC_RANGE_8G        0x33  /*!< Accelerometer 8G range */
-#define MSIMU_CMD_ACC_RANGE_16G       0x34  /*!< Accelerometer 16G range */
+//#define MSIMU_CMD_ACC_RANGE_2G        0x31  /*!< Accelerometer 2G range */
+//#define MSIMU_CMD_ACC_RANGE_4G        0x32  /*!< Accelerometer 4G range */
+//#define MSIMU_CMD_ACC_RANGE_8G        0x33  /*!< Accelerometer 8G range */
+//#define MSIMU_CMD_ACC_RANGE_16G       0x34  /*!< Accelerometer 16G range */
+
+#define MSIMU_SENSITIVITY_RANGE_1			0			/* Accelerometer Sensitivity to 2G, Gyro to 250 degrees/sec */
+#define MSIMU_SENSITIVITY_RANGE_2			2			/* Accelerometer Sensitivity to 4G, Gyro to 500 degrees/sec */
+#define MSIMU_SENSITIVITY_RANGE_3			3			/* Accelerometer Sensitivity to 8G, Gyro to 2000 degrees/sec */
+#define MSIMU_SENSITIVITY_RANGE_4			4			/* Accelerometer Sensitivity to 16G, Gyro to 2000 degrees/sec */
 
 #define MSIMU_GYRO_FILTER_NONE        0     /*!< Gyro filter level: none */
 #define MSIMU_GYRO_FILTER_LEVEL_1     1     /*!< Gyro filter level: 1 */
@@ -84,13 +89,17 @@
 tByteArray MSIMU_I2CRequest;    /*!< Array to hold I2C command data */
 tByteArray MSIMU_I2CReply;      /*!< Array to hold I2C reply data */
 
+float MSIMUunitsPerDegree[] = {8.75, 17.5, 70};
+ubyte MSIMUcurrentRange[] = {0, 0, 0, 0};
+
 bool _MSIMUsendCMD(tSensors link, ubyte cmd);
 bool MSIMUreadTiltAxes(tSensors link, int &_x, int &_y, int &_z);
-bool MSIMUreadGyroAxes(tSensors link, int &_x, int &_y, int &_z);
+bool MSIMUreadGyroAxes(tSensors link, float &_x, float &_y, float &_z);
 bool MSIMUreadAccelAxes(tSensors link, int &_x, int &_y, int &_z);
 bool MSIMUreadMagneticFields(tSensors link,  int &_x, int &_y, int &_z);
 int MSIMUreadHeading(tSensors link);
 bool MSIMUsetGyroFilter(tSensors link, ubyte level);
+bool MSIMUsetRange(tSensors link, ubyte range);
 
 
 /**
@@ -144,7 +153,7 @@ bool MSIMUreadTiltAxes(tSensors link, int &_x, int &_y, int &_z){
  * @param _z data for z axis in degrees per second
  * @return true if no error occured, false if it did
  */
-bool MSIMUreadGyroAxes(tSensors link, int &_x, int &_y, int &_z){
+bool MSIMUreadGyroAxes(tSensors link, float &_x, float &_y, float &_z){
 	MSIMU_I2CRequest[0] = 2;                        // Message size
   MSIMU_I2CRequest[1] = MSIMU_IMU_I2C_ADDR;      // I2C Address
 	MSIMU_I2CRequest[2] = MSIMU_REG_GYRO_ALL_AXES;  // Register address
@@ -155,6 +164,17 @@ bool MSIMUreadGyroAxes(tSensors link, int &_x, int &_y, int &_z){
   _x = MSIMU_I2CReply[0] + ((int)(MSIMU_I2CReply[1]<<8));
   _y = MSIMU_I2CReply[2] + ((int)(MSIMU_I2CReply[3]<<8));
   _z = MSIMU_I2CReply[4] + ((int)(MSIMU_I2CReply[5]<<8));
+
+  // Convert to millidegrees per second
+  //_x *= MSIMUunitsPerDegree[MSIMUcurrentRange[link]];
+  //_y *= MSIMUunitsPerDegree[MSIMUcurrentRange[link]];
+  //_z *= MSIMUunitsPerDegree[MSIMUcurrentRange[link]];
+
+  //// Convert to degrees per second
+  //_x /= 1000;
+  //_y /= 1000;
+  //_z /= 1000;
+
   return true;
 }
 
@@ -239,6 +259,23 @@ bool MSIMUsetGyroFilter(tSensors link, ubyte level)
 	MSIMU_I2CRequest[3] = level;  // filtering level
 
   return writeI2C(link, MSIMU_I2CRequest);
+}
+
+
+/**
+ * Set the sensitity range for the Accelerometer and Gyro
+ * Range 1: Change Accelerometer Sensitivity to 2G and Gyro to 250 degrees/sec
+ * Range 2: Change Accelerometer Sensitivity to 4G and Gyro to 500 degrees/sec
+ * Range 3: Change Accelerometer Sensitivity to 8G and Gyro to 2000 degrees/sec
+ * Range 4: Change Accelerometer Sensitivity to 16G and Gyro to 2000 degrees/sec
+ * @param link the port number
+ * @param range sensitivity range (MSIMU_SENSITIVITY_RANGE_1 ... MSIMU_SENSITIVITY_RANGE_4)
+ * @return true if no error occured, false if it did
+ */
+bool MSIMUsetRange(tSensors link, ubyte range)
+{
+	MSIMUcurrentRange[link] = range;
+	return _MSIMUsendCMD(link, MSIMU_SENSITIVITY_RANGE_1 + 0x31);
 }
 
 #endif // __MSIMU_H__
