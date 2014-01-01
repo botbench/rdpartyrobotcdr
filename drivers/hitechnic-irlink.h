@@ -32,7 +32,7 @@
  *
  * License: You may use this code as you wish, provided you give credit where its due.
  *
- * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER. 
+ * THIS CODE WILL ONLY WORK WITH ROBOTC VERSION 3.59 AND HIGHER.
 
  * \author Xander Soldaat (xander_at_botbench.com)
  * \date 25 May 2010
@@ -50,7 +50,7 @@
 #warn "-----------------------------------------"
 #endif
 
-#ifndef _COMMON_H_
+#ifndef __COMMON_H__
 #include "common.h"
 #endif
 
