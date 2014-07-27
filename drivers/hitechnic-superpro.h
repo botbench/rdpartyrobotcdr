@@ -80,6 +80,7 @@ tByteArray HTSPB_I2CReply;      /*!< Array to hold I2C reply data */
 ubyte HTSPBreadIO(tSensors link, ubyte mask);
 bool HTSPBwriteIO(tSensors link, ubyte mask);
 bool HTSPBsetupIO(tSensors link, ubyte mask);
+bool HTSPBwriteStrobe(tSensors link, ubyte mask);
 int HTSPBreadADC(tSensors link, byte channel, byte width);
 bool HTSPBreadAllADC(tSensors link, int &adch0, int &adch1, int &adch2, int &adch3, int &adch4, byte width);
 bool HTSPBsetLED(tSensors link, byte red, byte blue);
@@ -137,6 +138,24 @@ bool HTSPBsetupIO(tSensors link, ubyte mask) {
   HTSPB_I2CRequest[1] = HTSPB_I2C_ADDR;               // I2C Address
   HTSPB_I2CRequest[2] = HTSPB_OFFSET + HTSPB_DIGCTRL;  // Start digital input/output control address
   HTSPB_I2CRequest[3] = mask;                        // The specified digital ports
+
+  return writeI2C(link, HTSPB_I2CRequest);
+}
+
+
+/**
+ * Write digital values to the strobe ports according to the mask.
+ * @param link the HTSPB port number
+ * @param mask the specified strobe ports
+ * @return true if no error occured, false if it did
+ */
+bool HTSPBwriteStrobe(tSensors link, ubyte mask) {
+  memset(HTSPB_I2CRequest, 0, sizeof(tByteArray));
+
+  HTSPB_I2CRequest[0] = 3;                         // Message size
+  HTSPB_I2CRequest[1] = HTSPB_I2C_ADDR;             // I2C Address
+  HTSPB_I2CRequest[2] = HTSPB_OFFSET + HTSPB_STROBE; // Start digital input/output control address
+  HTSPB_I2CRequest[3] = mask;                       // The specified digital ports
 
   return writeI2C(link, HTSPB_I2CRequest);
 }
@@ -221,7 +240,7 @@ bool HTSPBreadAllADC(tSensors link, int &adch0, int &adch1, int &adch2, int &adc
  * @param link the HTSPB port number
  * @param dac the specified analog port, use HTSPB_DACO0 or HTSPB_DACO1
  * @param mode the analog mode
- * @param freq the analog frequency from 1 to 8193
+ * @param freq the analog frequency from 1 to 8191
  * @param volt the analog voltage from 0 to 1023 (for 0 to 3.3v)
  * @return true if no error occured, false if it did
  */
